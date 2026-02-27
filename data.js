@@ -241,8 +241,10 @@ window.DB = {
       risk_score_0_100: 94,
       risk_category: 'Inappropriate Conduct',
       top_risk_factors: '4 complaints from female students, asked for phone number, foul language',
+      top_risk_factors_ar: '٤ شكاوى من طالبات، طلب أرقام هواتف، استخدام ألفاظ بذيئة',
       pattern_detected: 'Targeting female students, pattern of inappropriate comments',
-      recommended_action: 'IMMEDIATE SUSPENSION PENDING INVESTIGATION'
+      recommended_action: 'IMMEDIATE SUSPENSION PENDING INVESTIGATION',
+      recommended_action_ar: 'إيقاف فوري ريثما يُستكمل التحقيق'
     },
     {
       emp_id: 'INS004',
@@ -250,8 +252,10 @@ window.DB = {
       risk_score_0_100: 97,
       risk_category: 'Bribery/Corruption',
       top_risk_factors: '5 separate bribe allegations, all from male students, pattern of "express pass" offers',
+      top_risk_factors_ar: '٥ اتهامات رشوة منفصلة، جميعها من طلاب ذكور، نمط متكرر لعروض "التمرير السريع"',
       pattern_detected: 'Systematic bribery scheme, preying on desperate students',
-      recommended_action: 'IMMEDIATE TERMINATION & LEGAL CONSULTATION'
+      recommended_action: 'IMMEDIATE TERMINATION & LEGAL CONSULTATION',
+      recommended_action_ar: 'إنهاء خدمة فوري والتشاور القانوني'
     },
     {
       emp_id: 'INS005',
@@ -310,13 +314,13 @@ window.DB = {
   ],
 
   dataset_6_old_cars_vs_new: [
-    { metric: 'Average Lessons to Pass', traditional_vehicle: '18 lessons', autonomous_vehicle: '12 lessons', difference: '-6 lessons (-33%)', annualized_impact: 'Students progress faster' },
-    { metric: 'First-Time Pass Rate', traditional_vehicle: '0.68', autonomous_vehicle: '0.94', difference: '0.26', annualized_impact: 'Higher success rate' },
-    { metric: 'Student Satisfaction', traditional_vehicle: '4.2/5', autonomous_vehicle: '4.9/5', difference: '0.7', annualized_impact: 'Better reviews' },
-    { metric: 'Instructor Hours Required', traditional_vehicle: '18 hours', autonomous_vehicle: '8 hours', difference: '-10 hours (-56%)', annualized_impact: 'Massive cost savings' },
-    { metric: 'Instructor Cost per Student', traditional_vehicle: '1,350 QAR', autonomous_vehicle: '600 QAR', difference: '-750 QAR', annualized_impact: '75,000 QAR savings per 100 students' },
-    { metric: 'Vehicle Utilization', traditional_vehicle: '0.7', autonomous_vehicle: '0.85', difference: '0.15', annualized_impact: 'More lessons possible' },
-    { metric: 'Female Student Preference', traditional_vehicle: '65% request female', autonomous_vehicle: '92% comfortable', difference: '0.27', annualized_impact: 'Cultural fit advantage' }
+    { metric: 'Average Lessons to Pass', metric_ar: 'متوسط الدروس للنجاح', traditional_vehicle: '18 lessons', traditional_ar: '١٨ درساً', autonomous_vehicle: '12 lessons', autonomous_ar: '١٢ درساً', difference: '-6 lessons (-33%)', diff_ar: '-٦ دروس (-٣٣٪)', annualized_impact: 'Students progress faster' },
+    { metric: 'First-Time Pass Rate', metric_ar: 'معدل النجاح من المحاولة الأولى', traditional_vehicle: '0.68', traditional_ar: '٠٫٦٨', autonomous_vehicle: '0.94', autonomous_ar: '٠٫٩٤', difference: '0.26', diff_ar: '+٠٫٢٦', annualized_impact: 'Higher success rate' },
+    { metric: 'Student Satisfaction', metric_ar: 'رضا الطلاب', traditional_vehicle: '4.2/5', traditional_ar: '٤٫٢/٥', autonomous_vehicle: '4.9/5', autonomous_ar: '٤٫٩/٥', difference: '0.7', diff_ar: '+٠٫٧', annualized_impact: 'Better reviews' },
+    { metric: 'Instructor Hours Required', metric_ar: 'ساعات المدرب المطلوبة', traditional_vehicle: '18 hours', traditional_ar: '١٨ ساعة', autonomous_vehicle: '8 hours', autonomous_ar: '٨ ساعات', difference: '-10 hours (-56%)', diff_ar: '-١٠ ساعات (-٥٦٪)', annualized_impact: 'Massive cost savings' },
+    { metric: 'Instructor Cost per Student', metric_ar: 'تكلفة المدرب لكل طالب', traditional_vehicle: '1,350 QAR', traditional_ar: '١٣٥٠ ريال', autonomous_vehicle: '600 QAR', autonomous_ar: '٦٠٠ ريال', difference: '-750 QAR', diff_ar: '-٧٥٠ ريال', annualized_impact: '75,000 QAR savings per 100 students' },
+    { metric: 'Vehicle Utilization', metric_ar: 'معدل استخدام المركبة', traditional_vehicle: '0.7', traditional_ar: '٠٫٧', autonomous_vehicle: '0.85', autonomous_ar: '٠٫٨٥', difference: '0.15', diff_ar: '+٠٫١٥', annualized_impact: 'More lessons possible' },
+    { metric: 'Female Student Preference', metric_ar: 'تفضيل الطالبات', traditional_vehicle: '65% request female', traditional_ar: '٦٥٪ يطلبن مدربة', autonomous_vehicle: '92% comfortable', autonomous_ar: '٩٢٪ مرتاحات', difference: '0.27', diff_ar: '+٠٫٢٧', annualized_impact: 'Cultural fit advantage' }
   ],
 
   dataset_7_financial_loss: [
@@ -388,16 +392,22 @@ window.ALKHEBRA_DATA = {
       complaints: r.emp_id === 'INS010' ? 4 : 5,
       gender: (DB.dataset_1_instructor_master.find(i => i.emp_id === r.emp_id) || {}).gender || 'M',
       factors: r.top_risk_factors.split(',').map(s => s.trim()),
+      factors_ar: r.top_risk_factors_ar ? r.top_risk_factors_ar.split('،').map(s => s.trim()) : [],
       keywords: [],
-      action: r.recommended_action
+      action: r.recommended_action,
+      action_ar: r.recommended_action_ar || ''
     }))
   },
   innovation: {
     comparison: DB.dataset_6_old_cars_vs_new.map(row => ({
       metric: row.metric,
+      metric_ar: row.metric_ar || '',
       traditional: row.traditional_vehicle,
+      traditional_ar: row.traditional_ar || '',
       autonomous: row.autonomous_vehicle,
-      diff: row.difference
+      autonomous_ar: row.autonomous_ar || '',
+      diff: row.difference,
+      diff_ar: row.diff_ar || ''
     })),
     annualSavings: 900000,
     roiMonths: 8,
@@ -418,4 +428,3 @@ window.ALKHEBRA_DATA = {
     }
   }
 };
-

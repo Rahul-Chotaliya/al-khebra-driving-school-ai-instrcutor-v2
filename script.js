@@ -21,8 +21,8 @@ const LANG = {
     kpi1: 'Financial Bleed',
     kpi2: 'Ethics Alerts',
     kpi3: 'AV Savings',
-    logoName: 'NexSolve LLC',
-    logoSub: 'Accelerate Change'
+    logoName: 'Al Khebra',
+    logoSub: 'Driving Academy'  
   },
   ar: window.ARABIC_LANG || {
     greetingMorning: 'صباح الخير، سعادة الرئيس',
@@ -41,14 +41,14 @@ const LANG = {
     kpi1: 'النزيف المالي',
     kpi2: 'تنبيهات أخلاقية',
     kpi3: 'وفورات السيارة الذكية',
-    logoName: 'NexSolve LLC',
+    logoName: 'Al Khebra',
     logoSub: 'تسريع التغيير'
   }
 };
 
 function applyLanguage(langCode) {
   // Temporarily disabled per requirement – Arabic UI switch is turned off
-  return;
+  // return;
   isArabic = (langCode === 'ar');
   const L = isArabic ? LANG.ar : LANG.en;
   document.documentElement.setAttribute('dir', isArabic ? 'rtl' : 'ltr');
@@ -67,6 +67,18 @@ function applyLanguage(langCode) {
   document.getElementById('kpi1Label').textContent = L.kpi1;
   document.getElementById('kpi2Label').textContent = L.kpi2;
   document.getElementById('kpi3Label').textContent = L.kpi3;
+
+  // Update KPI values with correct language suffix
+  const kpi2El = document.getElementById('kpi2Val');
+  if (kpi2El) {
+    const numMatch = kpi2El.textContent.match(/\d+/);
+    if (numMatch) kpi2El.textContent = numMatch[0] + ' ' + (isArabic ? 'نشط' : 'Active');
+  }
+  const kpi3El = document.getElementById('kpi3Val');
+  if (kpi3El) {
+    const numMatch = kpi3El.textContent.match(/\d+/);
+    if (numMatch) kpi3El.textContent = numMatch[0] + '% ' + (isArabic ? 'أسرع' : 'Faster');
+  }
   document.getElementById('welcomeGreeting').textContent = getGreeting();
   document.getElementById('welcomeSub').innerHTML = L.welcomeSub;
   if (!isArabic) {
@@ -261,6 +273,23 @@ function renderFallback() {
   }
 }
 
+const NATIONALITY_AR = {
+  'Qatari': 'قطري', 'Emirati': 'إماراتي', 'Saudi': 'سعودي', 'Kuwaiti': 'كويتي',
+  'Bahraini': 'بحريني', 'Omani': 'عماني', 'Egyptian': 'مصري', 'Lebanese': 'لبناني',
+  'Jordanian': 'أردني', 'Syrian': 'سوري', 'Iraqi': 'عراقي', 'Yemeni': 'يمني',
+  'Moroccan': 'مغربي', 'Tunisian': 'تونسي', 'Algerian': 'جزائري', 'Libyan': 'ليبي',
+  'Pakistani': 'باكستاني', 'Indian': 'هندي', 'Bangladeshi': 'بنغلاديشي',
+  'Sri Lankan': 'سريلانكي', 'Nepali': 'نيبالي', 'Filipino': 'فلبيني',
+  'Indonesian': 'إندونيسي', 'Kenyan': 'كيني', 'Nigerian': 'نيجيري',
+  'Ghanaian': 'غاني', 'Ugandan': 'أوغندي', 'Tanzanian': 'تنزاني',
+  'Sudanese': 'سوداني', 'Somali': 'صومالي', 'Ethiopian': 'إثيوبي'
+};
+
+function translateNationality(nat) {
+  if (!isArabic || !nat) return nat || '';
+  return NATIONALITY_AR[nat] || nat;
+}
+
 function renderFinanceResponse() {
   const area = document.getElementById('messagesArea');
 
@@ -309,7 +338,7 @@ function renderFinanceResponse() {
           <div class="inst-avatar red">${inst.name[0]}</div>
           <div>
             <div class="inst-name">${inst.name}</div>
-            <div class="inst-detail">${inst.id} · ${inst.nationality || ''} · ${isArabic?'مغادر':'Departed'} @ ${inst.months} ${isArabic?'شهر':'mo'} (${isArabic?'التعادل':'breakeven'}: ${inst.breakeven} ${isArabic?'شهر':'mo'})</div>
+            <div class="inst-detail">${inst.id} · ${translateNationality(inst.nationality)} · ${isArabic?'مغادر':'Departed'} @ ${inst.months} ${isArabic?'شهر':'mo'} (${isArabic?'التعادل':'breakeven'}: ${inst.breakeven} ${isArabic?'شهر':'mo'})</div>
             <div class="breakeven-bar"><div class="breakeven-fill" style="width:${pct}%;background:linear-gradient(90deg,#e05252,#ff6b6b)"></div></div>
           </div>
         </div>
@@ -407,7 +436,9 @@ function renderEthicsResponse() {
     const cardClass = person.score >= 90 ? 'critical' : 'warning';
     const badgeText = isArabic ? (person.category === 'Inappropriate Conduct' ? 'سلوك غير لائق' : 'رشوة/فساد') : person.category;
 
-    let factors = person.factors.map(f => `<div class="alert-factor"><i class="fas fa-dot-circle"></i><span>${f}</span></div>`).join('');
+    let factors = (isArabic && person.factors_ar && person.factors_ar.length ? person.factors_ar : person.factors)
+      .map(f => `<div class="alert-factor"><i class="fas fa-dot-circle"></i><span>${f}</span></div>`).join('');
+    const displayAction = (isArabic && person.action_ar) ? person.action_ar : person.action;
 
     const suspendAction = person.id === 'INS010'
       ? `<button class="action-btn danger"
@@ -447,7 +478,7 @@ function renderEthicsResponse() {
             <div class="alert-header">
               <div>
                 <div style="font-size:10px;color:var(--red);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">
-                  🔴 RED ALERT ${idx+1}/${highRisk.length} — ${badgeText}
+                  🔴 ${isArabic ? 'تنبيه عاجل' : 'RED ALERT'} ${idx+1}/${highRisk.length} — ${badgeText}
                 </div>
                 <div class="alert-name">${person.name} <span style="font-size:12px;color:var(--text2);font-weight:400">(${person.id})</span></div>
                 <div style="font-size:11px;color:var(--text2);margin-top:2px">${isArabic?'شكاوى:':'Complaints:'} ${person.complaints} | ${isArabic?'نمط مكتشف':'Pattern detected'}</div>
@@ -463,7 +494,7 @@ function renderEthicsResponse() {
             <div class="alert-factors">${factors}</div>
             <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:8px 10px;margin-top:4px;font-size:11px">
               <span style="color:var(--text2);font-weight:600">${isArabic?'التوصية:':'Recommended Action:'}</span>
-              <span style="color:${person.score>=90?'var(--red)':'var(--gold)'}"> ${person.action}</span>
+              <span style="color:${person.score>=90?'var(--red)':'var(--gold)'}"> ${displayAction}</span>
             </div>
           </div>
           <div class="action-buttons" style="margin-top:10px">${suspendAction}</div>
@@ -607,7 +638,7 @@ function renderInnovationResponse() {
             <tbody>`;
   const comparisonRows = (DATA && DATA.innovation && DATA.innovation.comparison) ? DATA.innovation.comparison : [];
   comparisonRows.forEach(r => {
-    tableHtml += `<tr><td>${r.metric}</td><td>${r.traditional}</td><td>${r.autonomous}</td><td>${r.diff}</td></tr>`;
+    tableHtml += `<tr><td>${isArabic && r.metric_ar ? r.metric_ar : r.metric}</td><td>${isArabic && r.traditional_ar ? r.traditional_ar : r.traditional}</td><td>${isArabic && r.autonomous_ar ? r.autonomous_ar : r.autonomous}</td><td>${isArabic && r.diff_ar ? r.diff_ar : r.diff}</td></tr>`;
   });
   tableHtml += `</tbody></table></div></div>`;
 
@@ -782,11 +813,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('kpi1Val').textContent = `${Math.round(bleed / 1000)}K QAR`;
     }
     if (typeof alerts === 'number') {
-      document.getElementById('kpi2Val').textContent = `${alerts} Active`;
+      document.getElementById('kpi2Val').textContent = `${alerts} ${isArabic ? 'نشط' : 'Active'}`;
     }
     if (typeof faster === 'number') {
-      document.getElementById('kpi3Val').textContent = `${faster}% Faster`;
+      document.getElementById('kpi3Val').textContent = `${faster}% ${isArabic ? 'أسرع' : 'Faster'}`;
     }
   }
 });
-
