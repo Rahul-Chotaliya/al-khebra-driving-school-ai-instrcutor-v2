@@ -1,3 +1,46 @@
+// Helper for slow, typewriter, one-by-one AI messages
+function showAIMessage(html, cb) {
+  showTyping();
+  setTimeout(() => {
+    removeTyping();
+    // Typewriter effect
+    const area = document.getElementById('messagesArea');
+    const wasNearBottom = isNearBottom(area);
+    const row = document.createElement('div');
+    row.className = `message-row ai`;
+    row.innerHTML = `
+      <div class="msg-avatar ai">✦</div>
+      <div class="msg-content" style="opacity:0;transition:opacity 0.7s cubic-bezier(.4,0,.2,1)">
+        <div class="msg-bubble"></div>
+        <div class="msg-time">${getCurrentTime()}</div>
+      </div>`;
+    area.appendChild(row);
+    setTimeout(() => { row.querySelector('.msg-content').style.opacity = 1; }, 80);
+    const bubble = row.querySelector('.msg-bubble');
+    let i = 0;
+    const plain = html.replace(/<br\s*\/>/gi, '\n');
+    const isHtml = /<[^>]+>/.test(html);
+    if (isHtml) {
+      bubble.innerHTML = html;
+      if (wasNearBottom) scrollToBottom();
+      setTimeout(() => { if (cb) cb(); }, 1200);
+      return;
+    }
+    function typeWriter() {
+      if (i <= plain.length) {
+        bubble.textContent = plain.slice(0, i);
+        if (wasNearBottom) scrollToBottom();
+        i++;
+        setTimeout(typeWriter, 32);
+      } else {
+        bubble.textContent = plain;
+        if (wasNearBottom) scrollToBottom();
+        setTimeout(() => { if (cb) cb(); }, 800);
+      }
+    }
+    setTimeout(typeWriter, 120);
+  }, 900);
+}
 // ========== DATA ==========
 // Expect DATA and DB objects from data.js
 
@@ -242,35 +285,51 @@ function sendQuestion(type, userText) {
 // ========== RESPONSES ==========
 
 function renderGreeting() {
-  if (isArabic) {
-    addMessage('ai', `وعليكم السلام، سعادة الرئيس 🌟<br><br>أنا مستشارك الاستراتيجي الذكي لأكاديمية الخبرة. لدي اليوم <strong style="color:var(--gold)">٣ رؤى عاجلة</strong> تستحق اهتمامك:<br><br>
-    📊 <strong>النزيف المالي</strong> — خسارة تتجاوز ٢٣٧,٠٠٠ ريال من المدربين المغادرين<br>
-    🛡️ <strong>مخاطر أخلاقية</strong> — تنبيهان حرجان يستلزمان تدخلاً فورياً<br>
-    🚗 <strong>عائد الاستثمار</strong> — وفورات ٩٠٠,٠٠٠ ريال سنوياً من السيارة الذكية<br><br>
-    بأي منها تبدأ، سعادتكم؟`);
-  } else {
-    addMessage('ai', `Good to have you, Your Excellency 🌟<br><br>I'm your AI Strategic Advisor for Alkhebra Academy. I have <strong style="color:var(--gold)">3 urgent insights</strong> ready for your review:<br><br>
-    📊 <strong>Financial Bleed</strong> — 237,000 QAR loss from early instructor departures<br>
-    🛡️ <strong>Ethical Alerts</strong> — 2 critical flags requiring immediate action<br>
-    🚗 <strong>Innovation ROI</strong> — 900,000 QAR annual savings from the autonomous car<br><br>
-    Which would you like to explore first, Your Excellency?`);
+  const msgs = isArabic
+    ? [
+        `وعليكم السلام، سعادة الرئيس 🌟`,
+        `أنا مستشارك الاستراتيجي الذكي لأكاديمية الخبرة. لدي اليوم <strong style="color:var(--gold)">٣ رؤى عاجلة</strong> تستحق اهتمامك:`,
+        `📊 <strong>النزيف المالي</strong> — خسارة تتجاوز ٢٣٧,٠٠٠ ريال من المدربين المغادرين`,
+        `🛡️ <strong>مخاطر أخلاقية</strong> — تنبيهان حرجان يستلزمان تدخلاً فورياً`,
+        `🚗 <strong>عائد الاستثمار</strong> — وفورات ٩٠٠,٠٠٠ ريال سنوياً من السيارة الذكية`,
+        `بأي منها تبدأ، سعادتكم؟`
+      ]
+    : [
+        `Good to have you, Your Excellency 🌟`,
+        `I'm your AI Strategic Advisor for Alkhebra Academy. I have <strong style="color:var(--gold)">3 urgent insights</strong> ready for your review:`,
+        `📊 <strong>Financial Bleed</strong> — 237,000 QAR loss from early instructor departures`,
+        `🛡️ <strong>Ethical Alerts</strong> — 2 critical flags requiring immediate action`,
+        `🚗 <strong>Innovation ROI</strong> — 900,000 QAR annual savings from the autonomous car`,
+        `Which would you like to explore first, Your Excellency?`
+      ];
+  function showNext(idx) {
+    if (idx >= msgs.length) return;
+    showAIMessage(msgs[idx], () => showNext(idx + 1));
   }
+  showNext(0);
 }
 
 function renderFallback() {
-  if (isArabic) {
-    addMessage('ai', `سعادة الرئيس، يمكنني حالياً تزويدكم بالرؤى في ثلاثة محاور:<br><br>
-    📊 <strong>النزيف المالي</strong> للمدربين<br>
-    🛡️ <strong>المخاطر الأخلاقية</strong> وانتهاكات القيم الإسلامية<br>
-    🚗 <strong>عائد الاستثمار</strong> في سيارة التعليم الذاتي<br><br>
-    أيها تفضل، سعادتكم؟`);
-  } else {
-    addMessage('ai', `Your Excellency, I can currently provide insights on three strategic areas:<br><br>
-    📊 <strong>Financial Bleed</strong> — Instructor lifetime value analysis<br>
-    🛡️ <strong>Ethical Risk</strong> — Islamic values protection & conduct monitoring<br>
-    🚗 <strong>Innovation ROI</strong> — Autonomous vehicle performance analysis<br><br>
-    Which area would you like to explore?`);
+  const msgs = isArabic
+    ? [
+        `سعادة الرئيس، يمكنني حالياً تزويدكم بالرؤى في ثلاثة محاور:`,
+        `📊 <strong>النزيف المالي</strong> للمدربين`,
+        `🛡️ <strong>المخاطر الأخلاقية</strong> وانتهاكات القيم الإسلامية`,
+        `🚗 <strong>عائد الاستثمار</strong> في سيارة التعليم الذاتي`,
+        `أيها تفضل، سعادتكم؟`
+      ]
+    : [
+        `Your Excellency, I can currently provide insights on three strategic areas:`,
+        `📊 <strong>Financial Bleed</strong> — Instructor lifetime value analysis`,
+        `🛡️ <strong>Ethical Risk</strong> — Islamic values protection & conduct monitoring`,
+        `🚗 <strong>Innovation ROI</strong> — Autonomous vehicle performance analysis`,
+        `Which area would you like to explore?`
+      ];
+  function showNext(idx) {
+    if (idx >= msgs.length) return;
+    showAIMessage(msgs[idx], () => showNext(idx + 1));
   }
+  showNext(0);
 }
 
 const NATIONALITY_AR = {
@@ -301,102 +360,51 @@ function renderFinanceResponse() {
        <strong style="color:var(--red)">⚠️ Critical Finding: 237,000 QAR total loss</strong> from 4 instructors who departed before reaching breakeven (50k QAR licensing cost + recruitment + salaries with no return).<br><br>
        Additionally, <strong style="color:var(--gold)">6 current instructors</strong> are still in the loss zone — 206,100 QAR at risk.`;
 
-  addMessage('ai', textMsg);
-
-  const terminated = (DATA && DATA.financial && DATA.financial.terminated) ? DATA.financial.terminated : [];
-
-  const chartRow = document.createElement('div');
-  chartRow.className = 'message-row ai';
-  chartRow.innerHTML = `
-    <div class="msg-avatar ai">✦</div>
-    <div class="msg-content" style="max-width:min(90%,600px)">
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">${isArabic?'الخسارة المالية لكل مدرب':'Financial Loss per Instructor'}</div>
-          <div class="chart-badge badge-red">${isArabic?'مغادرون':'Terminated'}</div>
-        </div>
-        <div class="chart-body">
-          <canvas class="finance-chart" height="160"></canvas>
-        </div>
-      </div>
-      <div class="msg-time">${getCurrentTime()}</div>
-    </div>`;
-  area.appendChild(chartRow);
-
-  const insRow = document.createElement('div');
-  insRow.className = 'message-row ai';
-  let insHtml = `<div class="msg-avatar ai">✦</div><div class="msg-content" style="max-width:min(90%,600px)">
-    <div class="msg-bubble">
-      <div style="font-weight:600;margin-bottom:10px;color:var(--red)">
-        <i class="fas fa-exclamation-triangle"></i> ${isArabic?'المدربون المغادرون — خسارة إجمالية: ٢٣٧,٠٠٠ ريال':'Departed Instructors — Total Loss: 237,000 QAR'}
-      </div>`;
-  terminated.forEach(inst => {
-    const pct = Math.round((inst.months / inst.breakeven) * 100);
-    insHtml += `
-      <div class="loss-row danger">
-        <div class="loss-inst-info">
-          <div class="inst-avatar red">${inst.name[0]}</div>
-          <div>
-            <div class="inst-name">${inst.name}</div>
-            <div class="inst-detail">${inst.id} · ${translateNationality(inst.nationality)} · ${isArabic?'مغادر':'Departed'} @ ${inst.months} ${isArabic?'شهر':'mo'} (${isArabic?'التعادل':'breakeven'}: ${inst.breakeven} ${isArabic?'شهر':'mo'})</div>
-            <div class="breakeven-bar"><div class="breakeven-fill" style="width:${pct}%;background:linear-gradient(90deg,#e05252,#ff6b6b)"></div></div>
+  showAIMessage(textMsg, () => {
+    // Chart message
+    const chartRow = document.createElement('div');
+    chartRow.className = 'message-row ai';
+    chartRow.innerHTML = `
+      <div class="msg-avatar ai">✦</div>
+      <div class="msg-content" style="max-width:min(90%,600px)">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">${isArabic?'الخسارة المالية لكل مدرب':'Financial Loss per Instructor'}</div>
+            <div class="chart-badge badge-red">${isArabic?'مغادرون':'Terminated'}</div>
+          </div>
+          <div class="chart-body">
+            <canvas class="finance-chart" height="160"></canvas>
           </div>
         </div>
-        <div class="loss-amount">
-          <div class="loss-qar">-${inst.loss.toLocaleString()} QAR</div>
-          <div class="loss-status">${isArabic?'خسارة صافية':'Net Loss'}</div>
-        </div>
+        <div class="msg-time">${getCurrentTime()}</div>
       </div>`;
-  });
-
-  insHtml += `<div style="margin-top:12px;padding:10px 14px;background:rgba(212,166,66,0.08);border:1px solid rgba(212,166,66,0.2);border-radius:10px;">
-    <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:4px">
-      <i class="fas fa-lightbulb"></i> ${isArabic?'التوصية الاستراتيجية':'Strategic Recommendation'}
-    </div>
-    <div style="font-size:12.5px;color:var(--text2);line-height:1.6">
-      ${isArabic
-        ? 'أنصح بمكافأة احتجاز فورية لـ INS005 و INS007 (١,٥٠٠ ريال لكل منهما) لمنع خسارة إضافية تبلغ ٦١,٢٠٠ ريال.'
-        : 'I recommend an immediate retention bonus for INS005 (Yusuf Abdi) and INS007 (Aisha Syed) at 1,500 QAR each — preventing an additional 61,200 QAR potential loss.'}
-    </div>
-  </div>`;
-
-  insHtml += `<div class="action-buttons">
-    <button class="action-btn success" onclick="doAction('approve_bonus','${isArabic?'تمت الموافقة على مكافأة الاحتجاز البالغة ٣,٠٠٠ ريال لـ INS005 و INS007':'3,000 QAR retention bonus approved for Yusuf Abdi & Aisha Syed'}','success')">
-      <i class="fas fa-check-circle"></i> ${isArabic?'اعتماد مكافأة ٣,٠٠٠ ريال':'Approve 3,000 QAR Retention Bonus'}
-    </button>
-    <button class="action-btn outline" onclick="doAction('view_all','${isArabic?'عرض تقرير كامل لجميع المدربين':'Full instructor lifetime value report generated'}','gold')">
-      <i class="fas fa-table"></i> ${isArabic?'عرض الكل':'View All Instructors'}
-    </button>
-  </div>`;
-
-  insHtml += `</div><div class="msg-time">${getCurrentTime()}</div></div>`;
-  insRow.innerHTML = insHtml;
-  area.appendChild(insRow);
-  scrollToBottom();
-
-  setTimeout(() => {
-    const canvas = chartRow.querySelector('canvas.finance-chart');
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: terminated.map(i => i.name.split(' ')[0]),
-          datasets: [{
-            label: isArabic ? 'الخسارة (ريال قطري)' : 'Net Loss (QAR)',
-            data: terminated.map(i => i.loss),
-            backgroundColor: ['rgba(224,82,82,0.7)','rgba(224,82,82,0.7)','rgba(224,82,82,0.85)','rgba(224,82,82,0.6)'],
-            borderColor: ['#e05252','#e05252','#e05252','#e05252'],
-            borderWidth: 1,
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => `-${ctx.raw.toLocaleString()} QAR`
+    area.appendChild(chartRow);
+    scrollToBottom();
+    setTimeout(() => {
+      const terminated = (DATA && DATA.financial && DATA.financial.terminated) ? DATA.financial.terminated : [];
+      const canvas = chartRow.querySelector('canvas.finance-chart');
+      if (canvas) {
+        new Chart(canvas, {
+          type: 'bar',
+          data: {
+            labels: terminated.map(i => i.name.split(' ')[0]),
+            datasets: [{
+              label: isArabic ? 'الخسارة (ريال قطري)' : 'Net Loss (QAR)',
+              data: terminated.map(i => i.loss),
+              backgroundColor: ['rgba(224,82,82,0.7)','rgba(224,82,82,0.7)','rgba(224,82,82,0.85)','rgba(224,82,82,0.6)'],
+              borderColor: ['#e05252','#e05252','#e05252','#e05252'],
+              borderWidth: 1,
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => `-${ctx.raw.toLocaleString()} QAR`
+                }
               }
             }
           },
@@ -411,10 +419,61 @@ function renderFinanceResponse() {
               }
             }
           }
-        }
+        });
+      }
+    }, 100);
+    // Instructor rows message
+    setTimeout(() => {
+      const terminated = (DATA && DATA.financial && DATA.financial.terminated) ? DATA.financial.terminated : [];
+      const insRow = document.createElement('div');
+      insRow.className = 'message-row ai';
+      let insHtml = `<div class="msg-avatar ai">✦</div><div class="msg-content" style="max-width:min(90%,600px)">
+        <div class="msg-bubble">
+          <div style="font-weight:600;margin-bottom:10px;color:var(--red)">
+            <i class="fas fa-exclamation-triangle"></i> ${isArabic?'المدربون المغادرون — خسارة إجمالية: ٢٣٧,٠٠٠ ريال':'Departed Instructors — Total Loss: 237,000 QAR'}
+          </div>`;
+      terminated.forEach(inst => {
+        const pct = Math.round((inst.months / inst.breakeven) * 100);
+        insHtml += `
+          <div class="loss-row danger">
+            <div class="loss-inst-info">
+              <div class="inst-avatar red">${inst.name[0]}</div>
+              <div>
+                <div class="inst-name">${inst.name}</div>
+                <div class="inst-detail">${inst.id} · ${translateNationality(inst.nationality)} · ${isArabic?'مغادر':'Departed'} @ ${inst.months} ${isArabic?'شهر':'mo'} (${isArabic?'التعادل':'breakeven'}: ${inst.breakeven} ${isArabic?'شهر':'mo'})</div>
+                <div class="breakeven-bar"><div class="breakeven-fill" style="width:${pct}%;background:linear-gradient(90deg,#e05252,#ff6b6b)"></div></div>
+              </div>
+            </div>
+            <div class="loss-amount">
+              <div class="loss-qar">-${inst.loss.toLocaleString()} QAR</div>
+              <div class="loss-status">${isArabic?'خسارة صافية':'Net Loss'}</div>
+            </div>
+          </div>`;
       });
-    }
-  }, 100);
+      insHtml += `<div style="margin-top:12px;padding:10px 14px;background:rgba(212,166,66,0.08);border:1px solid rgba(212,166,66,0.2);border-radius:10px;">
+        <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:4px">
+          <i class="fas fa-lightbulb"></i> ${isArabic?'التوصية الاستراتيجية':'Strategic Recommendation'}
+        </div>
+        <div style="font-size:12.5px;color:var(--text2);line-height:1.6">
+          ${isArabic
+            ? 'أنصح بمكافأة احتجاز فورية لـ INS005 و INS007 (١,٥٠٠ ريال لكل منهما) لمنع خسارة إضافية تبلغ ٦١,٢٠٠ ريال.'
+            : 'I recommend an immediate retention bonus for INS005 (Yusuf Abdi) and INS007 (Aisha Syed) at 1,500 QAR each — preventing an additional 61,200 QAR potential loss.'}
+        </div>
+      </div>`;
+      insHtml += `<div class="action-buttons">
+        <button class="action-btn success" onclick="doAction('approve_bonus','${isArabic?'تمت الموافقة على مكافأة الاحتجاز البالغة ٣,٠٠٠ ريال لـ INS005 و INS007':'3,000 QAR retention bonus approved for Yusuf Abdi & Aisha Syed'}','success')">
+          <i class="fas fa-check-circle"></i> ${isArabic?'اعتماد مكافأة ٣,٠٠٠ ريال':'Approve 3,000 QAR Retention Bonus'}
+        </button>
+        <button class="action-btn outline" onclick="doAction('view_all','${isArabic?'عرض تقرير كامل لجميع المدربين':'Full instructor lifetime value report generated'}','gold')">
+          <i class="fas fa-table"></i> ${isArabic?'عرض الكل':'View All Instructors'}
+        </button>
+      </div>`;
+      insHtml += `</div><div class="msg-time">${getCurrentTime()}</div></div>`;
+      insRow.innerHTML = insHtml;
+      area.appendChild(insRow);
+      scrollToBottom();
+    }, 1200);
+  });
 }
 
 function renderEthicsResponse() {
@@ -426,151 +485,80 @@ function renderEthicsResponse() {
     : `Your Excellency, the ethical monitoring system has detected <strong style="color:var(--red)">2 CRITICAL alerts</strong> requiring immediate action.<br><br>
        I analyzed <strong>15 student feedback records</strong> using keyword detection. The findings are serious.`;
 
-  addMessage('ai', openMsg);
-
-  const highRisk = (DATA && DATA.ethics && DATA.ethics.highRisk) ? DATA.ethics.highRisk : [];
-  highRisk.forEach((person, idx) => {
-    const row = document.createElement('div');
-    row.className = 'message-row ai';
-    const scoreClass = person.score >= 90 ? 'critical' : 'warning';
-    const cardClass = person.score >= 90 ? 'critical' : 'warning';
-    const badgeText = isArabic ? (person.category === 'Inappropriate Conduct' ? 'سلوك غير لائق' : 'رشوة/فساد') : person.category;
-
-    let factors = (isArabic && person.factors_ar && person.factors_ar.length ? person.factors_ar : person.factors)
-      .map(f => `<div class="alert-factor"><i class="fas fa-dot-circle"></i><span>${f}</span></div>`).join('');
-    const displayAction = (isArabic && person.action_ar) ? person.action_ar : person.action;
-
-    const suspendAction = person.id === 'INS010'
-      ? `<button class="action-btn danger"
-        onclick="doAction('suspend_david', \`${isArabic
-          ? 'تم إيقاف داود عمندي. تم إعادة تعيين ٤ طالبات إلى قسم السيدات.'
-          : "David Omondi suspended. 4 female students reassigned to Women's Section."
-        }\`, 'danger')">
-       <i class="fas fa-ban"></i> ${isArabic ? 'إيقاف فوري' : 'Suspend David Now'}
-     </button>
-     <button class="action-btn outline"
-        onclick="doAction('reassign', \`${isArabic
-          ? 'تم إعادة تعيين الطالبات إلى فاطمة الهاجري وعائشة سيد'
-          : '4 students reassigned to Fatima Al-Hajri & Aisha Syed'
-        }\`, 'success')">
-       <i class="fas fa-users"></i> ${isArabic ? 'إعادة تعيين الطالبات' : 'Reassign Students'}
-     </button>`
-      : `<button class="action-btn danger"
-        onclick="doAction('legal_samir', \`${isArabic
-          ? 'تم إخطار الفريق القانوني للمراجعة. سيتم إرسال التقرير خلال ٢٤ ساعة.'
-          : 'Legal team notified. Full investigation report scheduled within 24 hours.'
-        }\`, 'danger')">
-       <i class="fas fa-gavel"></i> ${isArabic ? 'مراجعة قانونية' : 'Legal Review for Samir'}
-     </button>
-     <button class="action-btn outline"
-        onclick="doAction('suspend_samir', \`${isArabic
-          ? 'تم إيقاف سمير خليل فوراً'
-          : 'Samir Khalil suspended pending investigation'
-        }\`, 'danger')">
-       <i class="fas fa-ban"></i> ${isArabic ? 'إيقاف فوري' : 'Suspend Now'}
-     </button>`;
-
-    row.innerHTML = `
-      <div class="msg-avatar ai">✦</div>
-      <div class="msg-content" style="max-width:min(90%,560px)">
-        <div class="msg-bubble">
-          <div class="alert-card ${cardClass}">
-            <div class="alert-header">
-              <div>
-                <div style="font-size:10px;color:var(--red);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">
-                  🔴 ${isArabic ? 'تنبيه عاجل' : 'RED ALERT'} ${idx+1}/${highRisk.length} — ${badgeText}
-                </div>
-                <div class="alert-name">${person.name} <span style="font-size:12px;color:var(--text2);font-weight:400">(${person.id})</span></div>
-                <div style="font-size:11px;color:var(--text2);margin-top:2px">${isArabic?'شكاوى:':'Complaints:'} ${person.complaints} | ${isArabic?'نمط مكتشف':'Pattern detected'}</div>
-              </div>
-              <div style="text-align:right">
-                <div class="risk-score ${scoreClass}">${person.score}</div>
-                <div class="risk-label">${isArabic?'نقاط الخطر':'Risk Score'}/100</div>
-                <div class="progress-bar" style="width:60px;margin-top:4px">
-                  <div class="progress-fill red" style="width:${person.score}%"></div>
-                </div>
-              </div>
-            </div>
-            <div class="alert-factors">${factors}</div>
-            <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:8px 10px;margin-top:4px;font-size:11px">
-              <span style="color:var(--text2);font-weight:600">${isArabic?'التوصية:':'Recommended Action:'}</span>
-              <span style="color:${person.score>=90?'var(--red)':'var(--gold)'}"> ${displayAction}</span>
-            </div>
-          </div>
-          <div class="action-buttons" style="margin-top:10px">${suspendAction}</div>
-        </div>
-        <div class="msg-time">${getCurrentTime()}</div>
-      </div>`;
-    area.appendChild(row);
-  });
-
-  const chartRow = document.createElement('div');
-  chartRow.className = 'message-row ai';
-  chartRow.innerHTML = `
-    <div class="msg-avatar ai">✦</div>
-    <div class="msg-content" style="max-width:min(90%,560px)">
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">${isArabic?'خريطة مخاطر المدربين':'Instructor Risk Heat Map'}</div>
-          <div class="chart-badge badge-red">${isArabic?'المشبوهون فقط':'Flagged Only'}</div>
-        </div>
-        <div class="chart-body">
-          <canvas class="ethics-chart" height="160"></canvas>
-        </div>
-      </div>
-      <div class="msg-time">${getCurrentTime()}</div>
-    </div>`;
-  area.appendChild(chartRow);
-  scrollToBottom();
-
-  setTimeout(() => {
-    const canvas = chartRow.querySelector('canvas.ethics-chart');
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: ['David Omondi', 'Samir Khalil', 'Yusuf Abdi', 'Mohammed Iqbal', 'Nadia Cherif'],
-          datasets: [{
-            label: isArabic ? 'درجة الخطر' : 'Risk Score',
-            data: [94, 97, 12, 8, 3],
-            backgroundColor: [
-              'rgba(224,82,82,0.8)', 
-              'rgba(224,82,82,0.9)', 
-              'rgba(76,175,125,0.6)', 
-              'rgba(76,175,125,0.5)', 
-              'rgba(76,175,125,0.4)'
-            ],
-            borderColor: ['#e05252', '#e05252', '#4caf7d', '#4caf7d', '#4caf7d'],
-            borderWidth: 1,
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: ctx => `Risk: ${ctx.raw}/100` } }
-          },
-          scales: {
-            x: { 
-              grid: { color: 'rgba(255,255,255,0.04)' }, 
-              ticks: { color: '#9aa3b0', font: { size: 10 } } 
-            },
-            y: { 
-              min: 0, 
-              max: 100, 
-              grid: { color: 'rgba(255,255,255,0.04)' }, 
-              ticks: { 
-                color: '#9aa3b0', 
-                callback: v => v + '/100', 
-                font: { size: 10 } 
-              } 
+  showAIMessage(openMsg, () => {
+    const highRisk = (DATA && DATA.ethics && DATA.ethics.highRisk) ? DATA.ethics.highRisk : [];
+    function showNext(idx) {
+      if (idx >= highRisk.length) {
+        // After all, show chart
+        showAIMessage('<div class="chart-card"><div class="chart-header"><div class="chart-title">'+(isArabic?'خريطة مخاطر المدربين':'Instructor Risk Heat Map')+'</div><div class="chart-badge badge-red">'+(isArabic?'المشبوهون فقط':'Flagged Only')+'</div></div><div class="chart-body"><canvas class="ethics-chart" height="160"></canvas></div></div>', () => {
+          setTimeout(() => {
+            const area = document.getElementById('messagesArea');
+            const chartRow = area.querySelector('canvas.ethics-chart')?.closest('.message-row');
+            const canvas = chartRow ? chartRow.querySelector('canvas.ethics-chart') : null;
+            if (canvas) {
+              new Chart(canvas, {
+                type: 'bar',
+                data: {
+                  labels: ['David Omondi', 'Samir Khalil', 'Yusuf Abdi', 'Mohammed Iqbal', 'Nadia Cherif'],
+                  datasets: [{
+                    label: isArabic ? 'درجة الخطر' : 'Risk Score',
+                    data: [94, 97, 12, 8, 3],
+                    backgroundColor: [
+                      'rgba(224,82,82,0.8)', 
+                      'rgba(224,82,82,0.9)', 
+                      'rgba(76,175,125,0.6)', 
+                      'rgba(76,175,125,0.5)', 
+                      'rgba(76,175,125,0.4)'
+                    ],
+                    borderColor: ['#e05252', '#e05252', '#4caf7d', '#4caf7d', '#4caf7d'],
+                    borderWidth: 1,
+                    borderRadius: 6
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `Risk: ${ctx.raw}/100` } }
+                  },
+                  scales: {
+                    x: { 
+                      grid: { color: 'rgba(255,255,255,0.04)' }, 
+                      ticks: { color: '#9aa3b0', font: { size: 10 } } 
+                    },
+                    y: { 
+                      min: 0, 
+                      max: 100, 
+                      grid: { color: 'rgba(255,255,255,0.04)' }, 
+                      ticks: { 
+                        color: '#9aa3b0', 
+                        callback: v => v + '/100', 
+                        font: { size: 10 } 
+                      } 
+                    }
+                  }
+                }
+              });
             }
-          }
-        }
-      });
+          }, 100);
+        });
+        return;
+      }
+      const person = highRisk[idx];
+      const scoreClass = person.score >= 90 ? 'critical' : 'warning';
+      const cardClass = person.score >= 90 ? 'critical' : 'warning';
+      const badgeText = isArabic ? (person.category === 'Inappropriate Conduct' ? 'سلوك غير لائق' : 'رشوة/فساد') : person.category;
+      let factors = (isArabic && person.factors_ar && person.factors_ar.length ? person.factors_ar : person.factors)
+        .map(f => `<div class=\"alert-factor\"><i class=\"fas fa-dot-circle\"></i><span>${f}</span></div>`).join('');
+      const displayAction = (isArabic && person.action_ar) ? person.action_ar : person.action;
+      const suspendAction = person.id === 'INS010'
+        ? `<button class=\"action-btn danger\" onclick=\"doAction('suspend_david', '${isArabic ? 'تم إيقاف داود عمندي. تم إعادة تعيين ٤ طالبات إلى قسم السيدات.' : "David Omondi suspended. 4 female students reassigned to Women's Section."}','danger')\"><i class=\"fas fa-ban\"></i> ${isArabic ? 'إيقاف فوري' : 'Suspend David Now'}</button><button class=\"action-btn outline\" onclick=\"doAction('reassign', '${isArabic ? 'تم إعادة تعيين الطالبات إلى فاطمة الهاجري وعائشة سيد' : '4 students reassigned to Fatima Al-Hajri & Aisha Syed'}','success')\"><i class=\"fas fa-users\"></i> ${isArabic ? 'إعادة تعيين الطالبات' : 'Reassign Students'}</button>`
+        : `<button class=\"action-btn danger\" onclick=\"doAction('legal_samir', '${isArabic ? 'تم إخطار الفريق القانوني للمراجعة. سيتم إرسال التقرير خلال ٢٤ ساعة.' : 'Legal team notified. Full investigation report scheduled within 24 hours.'}','danger')\"><i class=\"fas fa-gavel\"></i> ${isArabic ? 'مراجعة قانونية' : 'Legal Review for Samir'}</button><button class=\"action-btn outline\" onclick=\"doAction('suspend_samir', '${isArabic ? 'تم إيقاف سمير خليل فوراً' : 'Samir Khalil suspended pending investigation'}','danger')\"><i class=\"fas fa-ban\"></i> ${isArabic ? 'إيقاف فوري' : 'Suspend Now'}</button>`;
+      const msg = `<div class=\"alert-card ${cardClass}\"><div class=\"alert-header\"><div><div style=\"font-size:10px;color:var(--red);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px\">🔴 ${isArabic ? 'تنبيه عاجل' : 'RED ALERT'} ${idx+1}/${highRisk.length} — ${badgeText}</div><div class=\"alert-name\">${person.name} <span style=\"font-size:12px;color:var(--text2);font-weight:400\">(${person.id})</span></div><div style=\"font-size:11px;color:var(--text2);margin-top:2px\">${isArabic?'شكاوى:':'Complaints:'} ${person.complaints} | ${isArabic?'نمط مكتشف':'Pattern detected'}</div></div><div style=\"text-align:right\"><div class=\"risk-score ${scoreClass}\">${person.score}</div><div class=\"risk-label\">${isArabic?'نقاط الخطر':'Risk Score'}/100</div><div class=\"progress-bar\" style=\"width:60px;margin-top:4px\"><div class=\"progress-fill red\" style=\"width:${person.score}%\"></div></div></div></div><div class=\"alert-factors\">${factors}</div><div style=\"background:rgba(0,0,0,0.2);border-radius:8px;padding:8px 10px;margin-top:4px;font-size:11px\"><span style=\"color:var(--text2);font-weight:600\">${isArabic?'التوصية:':'Recommended Action:'}</span><span style=\"color:${person.score>=90?'var(--red)':'var(--gold)'}\"> ${displayAction}</span></div></div><div class=\"action-buttons\" style=\"margin-top:10px\">${suspendAction}</div>`;
+      showAIMessage(msg, () => showNext(idx+1));
     }
-  }, 100);
+    showNext(0);
+  });
 }
 
 function renderInnovationResponse() {
@@ -582,189 +570,101 @@ function renderInnovationResponse() {
     : `Your Excellency, the numbers speak for themselves.<br><br>
        The autonomous teaching car is generating <strong style="color:var(--green)">900,000 QAR in annual savings</strong> and recouped its entire R&D investment within <strong style="color:var(--gold)">8 months</strong>.`;
 
-  addMessage('ai', openMsg);
-
-  const statsRow = document.createElement('div');
-  statsRow.className = 'message-row ai';
-  statsRow.innerHTML = `
-    <div class="msg-avatar ai">✦</div>
-    <div class="msg-content" style="max-width:min(90%,560px)">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-label">${isArabic?'الوفورات السنوية':'Annual Savings'}</div>
-          <div class="stat-value green">900K</div>
-          <div class="stat-sub">QAR / year</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">${isArabic?'العائد على الاستثمار':'ROI Achieved'}</div>
-          <div class="stat-value gold">8 ${isArabic?'أشهر':'Months'}</div>
-          <div class="stat-sub">${isArabic?'استرداد كامل':'Full recoup'}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">${isArabic?'معدل النجاح':'Pass Rate'}</div>
-          <div class="stat-value green">94%</div>
-          <div class="stat-sub">${isArabic?'مقارنة بـ':'vs'} 68% ${isArabic?'تقليدي':'traditional'}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">${isArabic?'تخفيض الدروس':'Lesson Reduction'}</div>
-          <div class="stat-value gold">-33%</div>
-          <div class="stat-sub">${isArabic?'من ١٨ إلى ١٢ درساً':'18 → 12 lessons'}</div>
-        </div>
-      </div>
-      <div class="msg-time">${getCurrentTime()}</div>
-    </div>`;
-  area.appendChild(statsRow);
-
-  const tableRow = document.createElement('div');
-  tableRow.className = 'message-row ai';
-  let tableHtml = `
-    <div class="msg-avatar ai">✦</div>
-    <div class="msg-content" style="max-width:min(90%,580px)">
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">${isArabic?'مقارنة: تقليدي مقابل ذكي':'Performance: Traditional vs Autonomous'}</div>
-          <div class="chart-badge badge-green">${isArabic?'فوز ساحق':'Clear Winner'}</div>
-        </div>
-        <div class="chart-body" style="padding:0">
-          <table class="compare-table">
-            <thead>
-              <tr>
-                <th>${isArabic?'المقياس':'Metric'}</th>
-                <th>${isArabic?'التقليدي':'Traditional'}</th>
-                <th class="col-new">${isArabic?'الذكي':'Autonomous'}</th>
-                <th>${isArabic?'الفرق':'Difference'}</th>
-              </tr>
-            </thead>
-            <tbody>`;
-  const comparisonRows = (DATA && DATA.innovation && DATA.innovation.comparison) ? DATA.innovation.comparison : [];
-  comparisonRows.forEach(r => {
-    tableHtml += `<tr><td>${isArabic && r.metric_ar ? r.metric_ar : r.metric}</td><td>${isArabic && r.traditional_ar ? r.traditional_ar : r.traditional}</td><td>${isArabic && r.autonomous_ar ? r.autonomous_ar : r.autonomous}</td><td>${isArabic && r.diff_ar ? r.diff_ar : r.diff}</td></tr>`;
-  });
-  tableHtml += `</tbody></table></div></div>`;
-
-  tableHtml += `<div class="chart-card" style="margin-top:8px">
-    <div class="chart-header">
-      <div class="chart-title">${isArabic?'التكلفة لكل طالب':'Cost per Student (QAR)'}</div>
-      <div class="chart-badge badge-green">-750 QAR</div>
-    </div>
-    <div class="chart-body"><canvas class="innov-chart" height="140"></canvas></div>
-  </div>`;
-
-  tableHtml += `<div class="msg-bubble" style="margin-top:8px;background:rgba(76,175,125,0.08);border:1px solid rgba(76,175,125,0.2)">
-    <div style="font-weight:600;color:var(--green);margin-bottom:6px">
-      <i class="fas fa-robot"></i> ${isArabic?'التوصية الاستراتيجية':'Strategic Recommendation'}
-    </div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.6">
-      ${isArabic
-        ? 'بناءً على تحليل العائد على الاستثمار، أوصي بشراء مركبتين إضافيتين. التكلفة الإجمالية تُسترد في أقل من ١٠ أشهر، مع وفورات دائمة تبلغ ١.٨ مليون ريال سنوياً.'
-        : 'Based on the ROI analysis, I recommend purchasing 2 additional autonomous vehicles. Total investment fully recovered in under 10 months, with ongoing savings of 1.8M QAR annually.'}
-    </div>
-  </div>
-  <div class="action-buttons">
-    <button class="action-btn success" onclick="doAction('generate_proposal','${isArabic?'تم إنشاء مقترح مجلس الإدارة لمركبتين إضافيتين. سيُرسل للمراجعة.':'Board proposal for 2 additional autonomous vehicles generated & queued for review.'}','success')">
-      <i class="fas fa-file-alt"></i> ${isArabic?'توليد مقترح للمجلس':'Generate Board Proposal'}
-    </button>
-    <button class="action-btn gold" onclick="doAction('roi_calc','${isArabic?'حاسبة العائد على الاستثمار تُظهر: ١.٨ مليون ريال وفورات سنوية لمركبتين إضافيتين':'ROI Calculator: 2 additional vehicles = 1.8M QAR annual savings'}','gold')">
-      <i class="fas fa-calculator"></i> ${isArabic?'حاسبة العائد':'ROI Calculator'}
-    </button>
-  </div>
-  <div class="msg-time">${getCurrentTime()}</div>
-    </div>`;
-
-  tableRow.innerHTML = tableHtml;
-  area.appendChild(tableRow);
-  scrollToBottom();
-
-  setTimeout(() => {
-    const canvas = tableRow.querySelector('canvas.innov-chart');
-    if (canvas) {
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: [isArabic ? 'تقليدي' : 'Traditional', isArabic ? 'ذكي' : 'Autonomous'],
-          datasets: [{
-            data: [1350, 600],
-            backgroundColor: ['rgba(156,163,176,0.5)', 'rgba(76,175,125,0.7)'],
-            borderColor: ['#9ca3af', '#4caf7d'],
-            borderWidth: 1,
-            borderRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: ctx => ctx.raw + ' QAR' } }
-          },
-          scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9aa3b0' } },
-            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9aa3b0', callback: v => v + ' QAR', font:{size:10} } }
+  showAIMessage(openMsg, () => {
+    // Stats message
+    const statsHtml = `<div class=\"stat-grid\"><div class=\"stat-card\"><div class=\"stat-label\">${isArabic?'الوفورات السنوية':'Annual Savings'}</div><div class=\"stat-value green\">900K</div><div class=\"stat-sub\">QAR / year</div></div><div class=\"stat-card\"><div class=\"stat-label\">${isArabic?'العائد على الاستثمار':'ROI Achieved'}</div><div class=\"stat-value gold\">8 ${isArabic?'أشهر':'Months'}</div><div class=\"stat-sub\">${isArabic?'استرداد كامل':'Full recoup'}</div></div><div class=\"stat-card\"><div class=\"stat-label\">${isArabic?'معدل النجاح':'Pass Rate'}</div><div class=\"stat-value green\">94%</div><div class=\"stat-sub\">${isArabic?'مقارنة بـ':'vs'} 68% ${isArabic?'تقليدي':'traditional'}</div></div><div class=\"stat-card\"><div class=\"stat-label\">${isArabic?'تخفيض الدروس':'Lesson Reduction'}</div><div class=\"stat-value gold\">-33%</div><div class=\"stat-sub\">${isArabic?'من ١٨ إلى ١٢ درساً':'18 → 12 lessons'}</div></div></div>`;
+    showAIMessage(statsHtml, () => {
+      // Table message
+      let tableHtml = `<div class=\"chart-card\"><div class=\"chart-header\"><div class=\"chart-title\">${isArabic?'مقارنة: تقليدي مقابل ذكي':'Performance: Traditional vs Autonomous'}</div><div class=\"chart-badge badge-green\">${isArabic?'فوز ساحق':'Clear Winner'}</div></div><div class=\"chart-body\" style=\"padding:0\"><table class=\"compare-table\"><thead><tr><th>${isArabic?'المقياس':'Metric'}</th><th>${isArabic?'التقليدي':'Traditional'}</th><th class=\"col-new\">${isArabic?'الذكي':'Autonomous'}</th><th>${isArabic?'الفرق':'Difference'}</th></tr></thead><tbody>`;
+      const comparisonRows = (DATA && DATA.innovation && DATA.innovation.comparison) ? DATA.innovation.comparison : [];
+      comparisonRows.forEach(r => {
+        tableHtml += `<tr><td>${isArabic && r.metric_ar ? r.metric_ar : r.metric}</td><td>${isArabic && r.traditional_ar ? r.traditional_ar : r.traditional}</td><td>${isArabic && r.autonomous_ar ? r.autonomous_ar : r.autonomous}</td><td>${isArabic && r.diff_ar ? r.diff_ar : r.diff}</td></tr>`;
+      });
+      tableHtml += `</tbody></table></div></div>`;
+      tableHtml += `<div class=\"chart-card\" style=\"margin-top:8px\"><div class=\"chart-header\"><div class=\"chart-title\">${isArabic?'التكلفة لكل طالب':'Cost per Student (QAR)'}</div><div class=\"chart-badge badge-green\">-750 QAR</div></div><div class=\"chart-body\"><canvas class=\"innov-chart\" height=\"140\"></canvas></div></div>`;
+      tableHtml += `<div class=\"msg-bubble\" style=\"margin-top:8px;background:rgba(76,175,125,0.08);border:1px solid rgba(76,175,125,0.2)\"><div style=\"font-weight:600;color:var(--green);margin-bottom:6px\"><i class=\"fas fa-robot\"></i> ${isArabic?'التوصية الاستراتيجية':'Strategic Recommendation'}</div><div style=\"font-size:13px;color:var(--text2);line-height:1.6\">${isArabic? 'بناءً على تحليل العائد على الاستثمار، أوصي بشراء مركبتين إضافيتين. التكلفة الإجمالية تُسترد في أقل من ١٠ أشهر، مع وفورات دائمة تبلغ ١.٨ مليون ريال سنوياً.' : 'Based on the ROI analysis, I recommend purchasing 2 additional autonomous vehicles. Total investment fully recovered in under 10 months, with ongoing savings of 1.8M QAR annually.'}</div></div><div class=\"action-buttons\"><button class=\"action-btn success\" onclick=\"doAction('generate_proposal','${isArabic?'تم إنشاء مقترح مجلس الإدارة لمركبتين إضافيتين. سيُرسل للمراجعة.':'Board proposal for 2 additional autonomous vehicles generated & queued for review.'}','success')\"><i class=\"fas fa-file-alt\"></i> ${isArabic?'توليد مقترح للمجلس':'Generate Board Proposal'}</button><button class=\"action-btn gold\" onclick=\"doAction('roi_calc','${isArabic?'حاسبة العائد على الاستثمار تُظهر: ١.٨ مليون ريال وفورات سنوية لمركبتين إضافيتين':'ROI Calculator: 2 additional vehicles = 1.8M QAR annual savings'}','gold')\"><i class=\"fas fa-calculator\"></i> ${isArabic?'حاسبة العائد':'ROI Calculator'}</button></div><div class=\"msg-time\">${getCurrentTime()}</div>`;
+      showAIMessage(tableHtml, () => {
+        setTimeout(() => {
+          const area = document.getElementById('messagesArea');
+          const tableRow = area.querySelector('canvas.innov-chart')?.closest('.message-row');
+          const canvas = tableRow ? tableRow.querySelector('canvas.innov-chart') : null;
+          if (canvas) {
+            new Chart(canvas, {
+              type: 'bar',
+              data: {
+                labels: [isArabic ? 'تقليدي' : 'Traditional', isArabic ? 'ذكي' : 'Autonomous'],
+                datasets: [{
+                  data: [1350, 600],
+                  backgroundColor: ['rgba(156,163,176,0.5)', 'rgba(76,175,125,0.7)'],
+                  borderColor: ['#9ca3af', '#4caf7d'],
+                  borderWidth: 1,
+                  borderRadius: 8
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: { callbacks: { label: ctx => ctx.raw + ' QAR' } }
+                },
+                scales: {
+                  x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9aa3b0' } },
+                  y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9aa3b0', callback: v => v + ' QAR', font:{size:10} } }
+                }
+              }
+            });
           }
+        }, 100);
+        // Extra chart using dataset_2_lesson_performance: average satisfaction by vehicle type
+        const allLessons = (window.DB && window.DB.dataset_2_lesson_performance) ? window.DB.dataset_2_lesson_performance : [];
+        if (allLessons.length) {
+          const traditional = allLessons.filter(l => l.vehicle_type === 'Traditional');
+          const autonomous = allLessons.filter(l => l.vehicle_type === 'Autonomous');
+          const avg = arr => arr.reduce((s, l) => s + (l.satisfaction || 0), 0) / (arr.length || 1);
+          const avgTrad = avg(traditional);
+          const avgAuto = avg(autonomous);
+          const extraHtml = `<div class=\"chart-card\" style=\"margin-top:8px\"><div class=\"chart-header\"><div class=\"chart-title\">${isArabic ? 'رضا الطلاب حسب نوع السيارة' : 'Student Satisfaction by Vehicle Type'}</div><div class=\"chart-badge badge-green\">1–5</div></div><div class=\"chart-body\"><canvas class=\"satisfaction-chart\" height=\"140\"></canvas></div></div><div class=\"msg-time\">${getCurrentTime()}</div>`;
+          showAIMessage(extraHtml, () => {
+            setTimeout(() => {
+              const area = document.getElementById('messagesArea');
+              const extraRow = area.querySelector('canvas.satisfaction-chart')?.closest('.message-row');
+              const canvas = extraRow ? extraRow.querySelector('canvas.satisfaction-chart') : null;
+              if (canvas) {
+                new Chart(canvas, {
+                  type: 'bar',
+                  data: {
+                    labels: [isArabic ? 'تقليدي' : 'Traditional', isArabic ? 'ذكي' : 'Autonomous'],
+                    datasets: [{
+                      data: [avgTrad.toFixed(2), avgAuto.toFixed(2)],
+                      backgroundColor: ['rgba(156,163,176,0.6)', 'rgba(76,175,125,0.8)'],
+                      borderColor: ['#9ca3af', '#4caf7d'],
+                      borderWidth: 1,
+                      borderRadius: 8
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: { callbacks: { label: ctx => ctx.raw + '/5' } }
+                    },
+                    scales: {
+                      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9aa3b0' } },
+                      y: {
+                        min: 0, max: 5,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#9aa3b0', callback: v => v + '/5', font: { size: 10 } }
+                      }
+                    }
+                  }
+                });
+              }
+            }, 120);
+          });
         }
       });
-    }
-  }, 100);
-
-  // Extra chart using dataset_2_lesson_performance: average satisfaction by vehicle type
-  const allLessons = (window.DB && window.DB.dataset_2_lesson_performance) ? window.DB.dataset_2_lesson_performance : [];
-  if (allLessons.length) {
-    const traditional = allLessons.filter(l => l.vehicle_type === 'Traditional');
-    const autonomous = allLessons.filter(l => l.vehicle_type === 'Autonomous');
-    const avg = arr => arr.reduce((s, l) => s + (l.satisfaction || 0), 0) / (arr.length || 1);
-    const avgTrad = avg(traditional);
-    const avgAuto = avg(autonomous);
-
-    const extraRow = document.createElement('div');
-    extraRow.className = 'message-row ai';
-    extraRow.innerHTML = `
-      <div class="msg-avatar ai">✦</div>
-      <div class="msg-content" style="max-width:min(90%,580px)">
-        <div class="chart-card" style="margin-top:8px">
-          <div class="chart-header">
-            <div class="chart-title">${isArabic ? 'رضا الطلاب حسب نوع السيارة' : 'Student Satisfaction by Vehicle Type'}</div>
-            <div class="chart-badge badge-green">1–5</div>
-          </div>
-          <div class="chart-body"><canvas class="satisfaction-chart" height="140"></canvas></div>
-        </div>
-        <div class="msg-time">${getCurrentTime()}</div>
-      </div>`;
-    area.appendChild(extraRow);
-    scrollToBottom();
-
-    setTimeout(() => {
-      const canvas = extraRow.querySelector('canvas.satisfaction-chart');
-      if (canvas) {
-        new Chart(canvas, {
-          type: 'bar',
-          data: {
-            labels: [isArabic ? 'تقليدي' : 'Traditional', isArabic ? 'ذكي' : 'Autonomous'],
-            datasets: [{
-              data: [avgTrad.toFixed(2), avgAuto.toFixed(2)],
-              backgroundColor: ['rgba(156,163,176,0.6)', 'rgba(76,175,125,0.8)'],
-              borderColor: ['#9ca3af', '#4caf7d'],
-              borderWidth: 1,
-              borderRadius: 8
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { display: false },
-              tooltip: { callbacks: { label: ctx => ctx.raw + '/5' } }
-            },
-            scales: {
-              x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9aa3b0' } },
-              y: {
-                min: 0, max: 5,
-                grid: { color: 'rgba(255,255,255,0.04)' },
-                ticks: { color: '#9aa3b0', callback: v => v + '/5', font: { size: 10 } }
-              }
-            }
-          }
-        });
-      }
-    }, 120);
-  }
+    });
+  });
 }
 
 // ========== ACTION BUTTONS ==========
