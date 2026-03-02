@@ -361,7 +361,8 @@ function renderFinanceResponse() {
        Additionally, <strong style="color:var(--gold)">6 current instructors</strong> are still in the loss zone — 206,100 QAR at risk.`;
 
   showAIMessage(textMsg, () => {
-    // Chart message
+    // Chart message with unique canvas id
+    const chartId = 'financeChart_' + Date.now() + '_' + Math.floor(Math.random()*10000);
     const chartRow = document.createElement('div');
     chartRow.className = 'message-row ai';
     chartRow.innerHTML = `
@@ -373,7 +374,7 @@ function renderFinanceResponse() {
             <div class="chart-badge badge-red">${isArabic?'مغادرون':'Terminated'}</div>
           </div>
           <div class="chart-body">
-            <canvas class="finance-chart" height="160"></canvas>
+            <canvas id="${chartId}" class="finance-chart" height="160"></canvas>
           </div>
         </div>
         <div class="msg-time">${getCurrentTime()}</div>
@@ -382,7 +383,7 @@ function renderFinanceResponse() {
     scrollToBottom();
     setTimeout(() => {
       const terminated = (DATA && DATA.financial && DATA.financial.terminated) ? DATA.financial.terminated : [];
-      const canvas = chartRow.querySelector('canvas.finance-chart');
+      const canvas = document.getElementById(chartId);
       if (canvas) {
         new Chart(canvas, {
           type: 'bar',
@@ -490,11 +491,10 @@ function renderEthicsResponse() {
     function showNext(idx) {
       if (idx >= highRisk.length) {
         // After all, show chart
-        showAIMessage('<div class="chart-card"><div class="chart-header"><div class="chart-title">'+(isArabic?'خريطة مخاطر المدربين':'Instructor Risk Heat Map')+'</div><div class="chart-badge badge-red">'+(isArabic?'المشبوهون فقط':'Flagged Only')+'</div></div><div class="chart-body"><canvas class="ethics-chart" height="160"></canvas></div></div>', () => {
+        const chartId = 'ethicsChart_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+        showAIMessage('<div class="chart-card"><div class="chart-header"><div class="chart-title">'+ (isArabic?'خريطة مخاطر المدربين':'Instructor Risk Heat Map')+'</div><div class="chart-badge badge-red">'+(isArabic?'المشبوهون فقط':'Flagged Only')+'</div></div><div class="chart-body"><canvas id="'+chartId+'" class="ethics-chart" height="160"></canvas></div></div>', () => {
           setTimeout(() => {
-            const area = document.getElementById('messagesArea');
-            const chartRow = area.querySelector('canvas.ethics-chart')?.closest('.message-row');
-            const canvas = chartRow ? chartRow.querySelector('canvas.ethics-chart') : null;
+            const canvas = document.getElementById(chartId);
             if (canvas) {
               new Chart(canvas, {
                 type: 'bar',
@@ -581,13 +581,12 @@ function renderInnovationResponse() {
         tableHtml += `<tr><td>${isArabic && r.metric_ar ? r.metric_ar : r.metric}</td><td>${isArabic && r.traditional_ar ? r.traditional_ar : r.traditional}</td><td>${isArabic && r.autonomous_ar ? r.autonomous_ar : r.autonomous}</td><td>${isArabic && r.diff_ar ? r.diff_ar : r.diff}</td></tr>`;
       });
       tableHtml += `</tbody></table></div></div>`;
-      tableHtml += `<div class=\"chart-card\" style=\"margin-top:8px\"><div class=\"chart-header\"><div class=\"chart-title\">${isArabic?'التكلفة لكل طالب':'Cost per Student (QAR)'}</div><div class=\"chart-badge badge-green\">-750 QAR</div></div><div class=\"chart-body\"><canvas class=\"innov-chart\" height=\"140\"></canvas></div></div>`;
+      const innovChartId = 'innovChart_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+      tableHtml += `<div class=\"chart-card\" style=\"margin-top:8px\"><div class=\"chart-header\"><div class=\"chart-title\">${isArabic?'التكلفة لكل طالب':'Cost per Student (QAR)'}</div><div class=\"chart-badge badge-green\">-750 QAR</div></div><div class=\"chart-body\"><canvas id=\"${innovChartId}\" class=\"innov-chart\" height=\"140\"></canvas></div></div>`;
       tableHtml += `<div class=\"msg-bubble\" style=\"margin-top:8px;background:rgba(76,175,125,0.08);border:1px solid rgba(76,175,125,0.2)\"><div style=\"font-weight:600;color:var(--green);margin-bottom:6px\"><i class=\"fas fa-robot\"></i> ${isArabic?'التوصية الاستراتيجية':'Strategic Recommendation'}</div><div style=\"font-size:13px;color:var(--text2);line-height:1.6\">${isArabic? 'بناءً على تحليل العائد على الاستثمار، أوصي بشراء مركبتين إضافيتين. التكلفة الإجمالية تُسترد في أقل من ١٠ أشهر، مع وفورات دائمة تبلغ ١.٨ مليون ريال سنوياً.' : 'Based on the ROI analysis, I recommend purchasing 2 additional autonomous vehicles. Total investment fully recovered in under 10 months, with ongoing savings of 1.8M QAR annually.'}</div></div><div class=\"action-buttons\"><button class=\"action-btn success\" onclick=\"doAction('generate_proposal','${isArabic?'تم إنشاء مقترح مجلس الإدارة لمركبتين إضافيتين. سيُرسل للمراجعة.':'Board proposal for 2 additional autonomous vehicles generated & queued for review.'}','success')\"><i class=\"fas fa-file-alt\"></i> ${isArabic?'توليد مقترح للمجلس':'Generate Board Proposal'}</button><button class=\"action-btn gold\" onclick=\"doAction('roi_calc','${isArabic?'حاسبة العائد على الاستثمار تُظهر: ١.٨ مليون ريال وفورات سنوية لمركبتين إضافيتين':'ROI Calculator: 2 additional vehicles = 1.8M QAR annual savings'}','gold')\"><i class=\"fas fa-calculator\"></i> ${isArabic?'حاسبة العائد':'ROI Calculator'}</button></div><div class=\"msg-time\">${getCurrentTime()}</div>`;
       showAIMessage(tableHtml, () => {
         setTimeout(() => {
-          const area = document.getElementById('messagesArea');
-          const tableRow = area.querySelector('canvas.innov-chart')?.closest('.message-row');
-          const canvas = tableRow ? tableRow.querySelector('canvas.innov-chart') : null;
+          const canvas = document.getElementById(innovChartId);
           if (canvas) {
             new Chart(canvas, {
               type: 'bar',
@@ -623,12 +622,11 @@ function renderInnovationResponse() {
           const avg = arr => arr.reduce((s, l) => s + (l.satisfaction || 0), 0) / (arr.length || 1);
           const avgTrad = avg(traditional);
           const avgAuto = avg(autonomous);
-          const extraHtml = `<div class=\"chart-card\" style=\"margin-top:8px\"><div class=\"chart-header\"><div class=\"chart-title\">${isArabic ? 'رضا الطلاب حسب نوع السيارة' : 'Student Satisfaction by Vehicle Type'}</div><div class=\"chart-badge badge-green\">1–5</div></div><div class=\"chart-body\"><canvas class=\"satisfaction-chart\" height=\"140\"></canvas></div></div><div class=\"msg-time\">${getCurrentTime()}</div>`;
+          const satisfactionChartId = 'satisfactionChart_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+          const extraHtml = `<div class=\"chart-card\" style=\"margin-top:8px\"><div class=\"chart-header\"><div class=\"chart-title\">${isArabic ? 'رضا الطلاب حسب نوع السيارة' : 'Student Satisfaction by Vehicle Type'}</div><div class=\"chart-badge badge-green\">1–5</div></div><div class=\"chart-body\"><canvas id=\"${satisfactionChartId}\" class=\"satisfaction-chart\" height=\"140\"></canvas></div></div><div class=\"msg-time\">${getCurrentTime()}</div>`;
           showAIMessage(extraHtml, () => {
             setTimeout(() => {
-              const area = document.getElementById('messagesArea');
-              const extraRow = area.querySelector('canvas.satisfaction-chart')?.closest('.message-row');
-              const canvas = extraRow ? extraRow.querySelector('canvas.satisfaction-chart') : null;
+              const canvas = document.getElementById(satisfactionChartId);
               if (canvas) {
                 new Chart(canvas, {
                   type: 'bar',
