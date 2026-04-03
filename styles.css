@@ -198,7 +198,6 @@ body {
   font-family: inherit;
 }
 .btn-lang:hover { background: var(--gold-dim); border-color: var(--gold); }
-
 /* === MAIN CHAT AREA === */
 .chat-wrapper {
   flex: 1;
