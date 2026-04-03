@@ -1,6 +1,16 @@
+// ================== AI SPEED CONTROL ==================
+let aiSpeedLevel = 1; // 1=Slow (fixed, no UI control)
+
+function getSpeedMultiplier() {
+  // Higher level means faster; invert for delay scaling
+  const speedMap = {1: 2.8, 2: 1.8, 3: 1.1, 4: 0.7};
+  return speedMap[aiSpeedLevel] || 1.8;
+}
+
 // Helper for slow, typewriter, one-by-one AI messages
 function showAIMessage(html, cb) {
   showTyping();
+  const speed = getSpeedMultiplier();
   setTimeout(() => {
     removeTyping();
     // Typewriter effect
@@ -15,7 +25,7 @@ function showAIMessage(html, cb) {
         <div class="msg-time">${getCurrentTime()}</div>
       </div>`;
     area.appendChild(row);
-    setTimeout(() => { row.querySelector('.msg-content').style.opacity = 1; }, 80);
+    setTimeout(() => { row.querySelector('.msg-content').style.opacity = 1; }, 80 * speed);
     const bubble = row.querySelector('.msg-bubble');
     let i = 0;
     const plain = html.replace(/<br\s*\/>/gi, '\n');
@@ -23,7 +33,7 @@ function showAIMessage(html, cb) {
     if (isHtml) {
       bubble.innerHTML = html;
       if (wasNearBottom) scrollToBottom();
-      setTimeout(() => { if (cb) cb(); }, 1200);
+      setTimeout(() => { if (cb) cb(); }, 1200 * speed);
       return;
     }
     function typeWriter() {
@@ -31,15 +41,15 @@ function showAIMessage(html, cb) {
         bubble.textContent = plain.slice(0, i);
         if (wasNearBottom) scrollToBottom();
         i++;
-        setTimeout(typeWriter, 32);
+        setTimeout(typeWriter, Math.round(28 * speed));
       } else {
         bubble.textContent = plain;
         if (wasNearBottom) scrollToBottom();
-        setTimeout(() => { if (cb) cb(); }, 800);
+        setTimeout(() => { if (cb) cb(); }, 800 * speed);
       }
     }
-    setTimeout(typeWriter, 120);
-  }, 900);
+    setTimeout(typeWriter, Math.round(120 * speed));
+  }, Math.round(900 * speed));
 }
 // ========== DATA ==========
 // Expect DATA and DB objects from data.js
@@ -269,7 +279,8 @@ function sendQuestion(type, userText) {
   addMessage('user', displayText, null, true);
   showTyping();
 
-  const delay = type === 'fallback' ? 900 : 1400;
+  const baseDelay = type === 'fallback' ? 900 : 1400;
+  const delay = Math.round(baseDelay * getSpeedMultiplier());
   setTimeout(() => {
     removeTyping();
     switch(type) {
